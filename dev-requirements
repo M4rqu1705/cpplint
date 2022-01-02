@@ -9,6 +9,6 @@ tox-pyenv
 importlib-metadata>=0.12
 
 # Below only run with python3, installed in tox.ini
-# mypy
-# coala
-# coala-bears
+mypy
+coala
+coala-bears
