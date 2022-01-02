@@ -1,5 +1,6 @@
 {
   "python.linting.flake8Enabled": true,
   "python.linting.enabled": true,
-  "python.defaultInterpreterPath": "C:/Users/marco/AppData/Local/Programs/miniconda3/envs/CPPLINT/python.exe"
+  "python.defaultInterpreterPath": "C:/Users/marco/AppData/Local/Programs/miniconda3/envs/CPPLINT/python.exe",
+  "python.formatting.provider": "yapf"
 }

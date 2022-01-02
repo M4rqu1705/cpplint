@@ -59,7 +59,7 @@ import xml.etree.ElementTree
 # if empty, use defaults
 _valid_extensions = set([])
 
-__VERSION__ = '1.5.5'
+__VERSION__ = '1.5.6'
 
 try:
   xrange          # Python 2
@@ -6806,6 +6806,8 @@ def ParseArguments(args):
   if recursive:
     filenames = _ExpandDirectories(filenames)
 
+  # Update _excludes as dictated by .cpplintignore before filtering out excluded files
+  _ProcessCPPLintIgnore()
   if _excludes:
     filenames = _FilterExcludedFiles(filenames)
 
@@ -6849,6 +6851,26 @@ def _ExpandDirectories(filenames):
       filtered.append(filename)
   return filtered
 
+def _ProcessCPPLintIgnore():
+  """Reads .cpplintignore file located relative to the current working directory and excludes those files.
+
+  Adding files to the .cpplintignore is equivalent to just adding those files to the --exclude flag, but it's a 
+  lot more flexible and convenient.
+
+  Note: This function directly manipulates the _excludes global.
+  """
+  cpplint_file_path = os.path.join(".", ".cpplintignore")
+
+  if not os.path.isfile(cpplint_file_path):
+    return
+
+  global _excludes
+  if _excludes is None:
+    _excludes = set()
+
+  with open(cpplint_file_path, encoding='utf-8', mode='r') as fp:
+    _excludes.update({line.strip() for line in fp.readlines()})
+
 def _FilterExcludedFiles(fnames):
   """Filters out files listed in the --exclude command line switch. File paths
   in the switch are evaluated relative to the current working directory
@@ -6877,23 +6899,6 @@ def _IsParentOrSame(parent, child):
   child_suffix = child_suffix.lstrip(os.sep)
   return child == os.path.join(prefix, child_suffix)
 
-def ProcessCPPLintIgnore():
-  global _excludes
-
-  if _excludes is None:
-    _excludes = set()
-
-  cpplint_file_path = os.path.join([
-      _root if isinstance(_root, str) else ".", ".cpplintignore"
-    ])
-
-  if not os.path.isfile(cpplint_file_path):
-    return
-
-  with open(os.path.join([_root, ".cpplintignore"]), encoding='utf-8', mode='r') as fp:
-    _excludes.update({glob.glob(line.strip()) for line in fp.readlines()})
-
-
 def main():
   filenames = ParseArguments(sys.argv[1:])
   backup_err = sys.stderr
@@ -6903,11 +6908,6 @@ def main():
     sys.stderr = codecs.StreamReader(sys.stderr, 'replace')
 
     _cpplint_state.ResetErrorCounts()
-    ProcessCPPLintIgnore()
-    print("--- --- --- --- ---")
-    print("The excluded files are:")
-    print(_excludes)
-    print("--- --- --- --- ---")
     for filename in filenames:
       ProcessFile(filename, _cpplint_state.verbose_level)
     # If --quiet is passed, suppress printing error count unless there are errors.
@@ -6921,7 +6921,6 @@ def main():
     sys.stderr = backup_err
 
   sys.exit(_cpplint_state.error_count > 0)
-
 
 if __name__ == '__main__':
   main()
