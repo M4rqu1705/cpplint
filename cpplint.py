@@ -384,6 +384,10 @@ _DEFAULT_KERNEL_SUPPRESSED_CATEGORIES = [
     'whitespace/tab',
     ]
 
+_DEFAULT_EXCLUDES = [
+
+]
+
 # We used to check for high-bit characters, but after much discussion we
 # decided those were OK, as long as they were in UTF-8 and didn't represent
 # hard-coded international strings, which belong in a separate i18n file.
@@ -6873,6 +6877,22 @@ def _IsParentOrSame(parent, child):
   child_suffix = child_suffix.lstrip(os.sep)
   return child == os.path.join(prefix, child_suffix)
 
+def ProcessCPPLintIgnore():
+  global _excludes
+  global _root
+
+  if _excludes is None:
+    _excludes = set()
+
+  cpplint_file_path = os.path.join([_root if isinstance(_root, str) else ".", ".cpplintignore"])
+
+  if not os.path.isfile(cpplint_file_path):
+    return
+
+  with open(os.path.join([_root, ".cpplintignore"]), encoding='utf-8', mode='r') as fp:
+    _excludes.update({line.strip() for line in fp.readlines()})
+
+
 def main():
   filenames = ParseArguments(sys.argv[1:])
   backup_err = sys.stderr
@@ -6882,6 +6902,7 @@ def main():
     sys.stderr = codecs.StreamReader(sys.stderr, 'replace')
 
     _cpplint_state.ResetErrorCounts()
+    ProcessCPPLintIgnore()
     for filename in filenames:
       ProcessFile(filename, _cpplint_state.verbose_level)
     # If --quiet is passed, suppress printing error count unless there are errors.
