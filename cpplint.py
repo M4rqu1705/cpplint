@@ -6879,18 +6879,19 @@ def _IsParentOrSame(parent, child):
 
 def ProcessCPPLintIgnore():
   global _excludes
-  global _root
 
   if _excludes is None:
     _excludes = set()
 
-  cpplint_file_path = os.path.join([_root if isinstance(_root, str) else ".", ".cpplintignore"])
+  cpplint_file_path = os.path.join([
+      _root if isinstance(_root, str) else ".", ".cpplintignore"
+    ])
 
   if not os.path.isfile(cpplint_file_path):
     return
 
   with open(os.path.join([_root, ".cpplintignore"]), encoding='utf-8', mode='r') as fp:
-    _excludes.update({line.strip() for line in fp.readlines()})
+    _excludes.update({glob.glob(line.strip()) for line in fp.readlines()})
 
 
 def main():
@@ -6903,6 +6904,10 @@ def main():
 
     _cpplint_state.ResetErrorCounts()
     ProcessCPPLintIgnore()
+    print("--- --- --- --- ---")
+    print("The excluded files are:")
+    print(_excludes)
+    print("--- --- --- --- ---")
     for filename in filenames:
       ProcessFile(filename, _cpplint_state.verbose_level)
     # If --quiet is passed, suppress printing error count unless there are errors.
